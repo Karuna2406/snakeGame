@@ -25,43 +25,50 @@ struct position
 
 class Snake
 {
-   vector<position> body;
-   int length;
+private:
+    vector<position> body;
+    int length;
 
 public:
-   Snake()
-   {
-      length = 3;
-      for(int i = 0; i < length; ++i)
-      {
-         body.push_back({WIDTH / 4 - i, HEIGHT / 2});
-      }
-   }
+    Snake()
+    {
+        length = 3;
+        for (int i = 0; i < length; ++i)
+        {
+            body.push_back({WIDTH / 4 - i, HEIGHT / 2});
+        }
+    }
 
-   void move(position newHead)
-   { 
-      body.insert(body.begin(), newHead);
-      body.pop_back();
-   }
+    void move(position newHead)
+    {
+        body.insert(body.begin(), newHead);
+        body.pop_back();
+    }
 
-   void grow(position newHead)
-   {
-      body.insert(body.begin(), newHead);
-      ++length;
-   }
+    void grow(position newhead)
+    {
+        body.insert(body.begin(), newhead);
+        ++length;
+    }
 
-   bool collides(position pos)
-   {
-      for(const auto& part : body)
-      {
-         if(part.x == pos.x && part.y == pos.y)
-         {
-            return true;
-         }
-      }
-      return false;
-   }
+    bool collides(position pos) const
+    {
+        for (const auto& part : body)
+        {
+            if (part.x == pos.x && part.y == pos.y)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    const vector<position>& getBody() const
+    {
+        return body;
+    }
 };
+
 
 struct Food
 {
@@ -99,65 +106,67 @@ position get_newHead(position head, int direction)
 
 bool check_collision(const Snake& snake)
 {
-  position head = snake.body.front();
-  if(head.x < 0 || head.x >= WIDTH || head.y < 0 || head.y >= HEIGHT)
-  {
-      return true;
-  }
-  for(size_t i = 1; i < snake.body.size(); ++i)
-  {
-      if(head.x == snake.body[i].x && head.y == snake.body[i].y)
-      {
-         return true;
-      }
-  }
-  return false;
+    position head = snake.getBody().front();
+    if (head.x < 0 || head.x >= WIDTH || head.y < 0 || head.y >= HEIGHT)
+    {
+        return true;
+    }
+    for (size_t i = 1; i < snake.getBody().size(); ++i)
+    {
+        if (head.x == snake.getBody()[i].x && head.y == snake.getBody()[i].y)
+        {
+            return true;
+        }
+    }
+    return false;
 }
+
 
 void render(const Snake& snake, const Food& food)
 {
-  clear();
-  for(const auto& part : snake.body)
-  {
-    mvprintw(part.y, part.x, "O");
-  }
-  mvprintw(food.pos.y, food.pos.x, "X");
-  refresh();
+    clear();
+    for (const auto& part : snake.getBody())
+    {
+        mvprintw(part.y, part.x, "O");
+    }
+    mvprintw(food.pos.y, food.pos.x, "X");
+    refresh();
 }
+
 
 int main()
 {
-  srand(time(0));
-  init();
-   
-  Snake snake;
-  Food food;
-  food.placeFood(snake);
+    srand(time(0));
+    init();
 
-  int direction = KEY_RIGHT;
-  while(true)
-  {
-    int next_key = getch();
-    if(next_key != ERR)
+    Snake snake;
+    Food food;
+    food.placeFood(snake);
+
+    int direction = KEY_RIGHT;
+    while (true)
     {
-      direction = next_key;
+        int next_key = getch();
+        if (next_key != ERR)
+        {
+            direction = next_key;
+        }
+        position newHead = get_newHead(snake.getBody().front(), direction);
+        if (newHead.x == food.pos.x && newHead.y == food.pos.y)
+        {
+            snake.grow(newHead);
+            food.placeFood(snake);
+        }
+        else
+        {
+            snake.move(newHead);
+        }
+        if (check_collision(snake))
+        {
+            break;
+        }
+        render(snake, food);
     }
-    position newHead = get_newHead(snake.body.front(), direction);
-    if(newHead.x == food.pos.x && newHead.y == food.pos.y)
-    {
-      snake.grow(newHead);
-      food.placeFood(snake);
-    }
-    else
-    {
-      snake.move(newHead);
-    }
-    if(check_collision(snake))
-    {
-      break;
-    }
-    render(snake, food);
-  }
-  endwin();
-  return 0;
+    endwin();
+    return 0;
 }
